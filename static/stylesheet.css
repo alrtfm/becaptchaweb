@@ -1,0 +1,63 @@
+/* Pen-specific styles */
+body { 
+  font-size: 1.25rem;
+}
+section {
+  /*padding-bottom: 200px;*/
+  padding-bottom: 100px;
+}
+h1 {
+  font-size: 1.75rem;
+  margin: 0 0 0.75rem 0;
+}
+
+/* Pattern styles */
+.box1{
+  background-color: #047a26;
+  border-radius: 25px;
+  border: 3px solid black;
+  padding: 20px 20px 20px 20px;
+  margin-bottom: 5px;
+}
+.box2 {
+  background-color: #ff9200;
+  border-radius: 25px;
+  border: 3px solid black;
+  padding: 20px 20px 20px 20px;
+  margin-bottom: 5px;
+}
+.box3 {
+  background-color: #007ccf;
+  border-radius: 25px;
+  border: 3px solid black;
+  padding: 20px 20px 20px 20px;
+  margin-bottom: 5px;
+}
+.box4 {
+  background-color: #cacac8;
+  border-radius: 25px;
+  border: 3px solid black;
+  padding: 20px 20px 20px 20px;
+  margin-bottom: 5px;
+}
+
+/*Caja del swipe */
+.square{
+  /*width: 70vw;
+  height: 30vw;
+  background-color: lightgreen;
+  border-color: black;*/
+  background-color: white;
+  border-radius: 25px;
+  border: 3px solid black;
+  padding: 20px 20px 20px 20px;
+  margin-bottom: 5px;
+}
+svg {
+  font-family: 'Bowlby One SC', cursive;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;*/
+}

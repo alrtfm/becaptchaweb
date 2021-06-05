@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>BeCaptchaWeb</title>  
+	<!-- .............................. SCRIPTS .............................. -->
+	<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='stylesheet.css') }}">
+	<!-- FIREBASE -->
+	<script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-app.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-database.js"></script>
+	<!-- READ INFO SCRIPT -->
+	<script src="{{ url_for('static',filename='readinfo.js') }}"> </script>
+	<!-- JQUERY -->
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+
+	<!-- .............................. SCRIPTS .............................. -->
+</head>
+
+<body>
+	<section class="container">
+		<div class="box1">
+			<h1>BeCaptchaWeb</h1>
+
+			Esta web permite demostrar la aplicación de los métodos de detección de bots y captura de datos propuestos en el presente Trabajo Fin de Máster. La web captura de forma automática la interacción del usuario con la web, subiendo los siguientes datos a Google Real Time Database. <br />
+
+			<ul>
+				<li>Acelerómetro</li>
+				<li>Giroscopio</li>
+				<li>Orientación del dispositivo</li>
+				<li>Mouse</li>
+				<li>Pantalla táctil</li>
+				<li>Teclado</li>
+				<li>Información del dispositivo</li>
+				<li>Score de RECAPTCHA v3</li>
+			</ul>
+
+			Un registro de la interacción registrada puede verse abriendo la consola del navegador (F12)
+
+		</div>
+		<!-- FLASK ------------------------------------------------------------------------------------->
+		<div class="box3">
+			<h1>Demostrador de concepto</h1>
+
+			La web está desarrollada con el framework Flask, que permite integrar el código en Python desarrollado. Así, las redes neuronales entrenadas reciben los datos que el usuario registra en esta web y evalúan si se trata de un humano o un bot, mostrando el resultado al usuario por pantalla. <br>
+
+			Los botones mostrados a continuación permiten seleccionar el tipo de interacción que se quiere probar. <br> <br>
+
+
+			<a href=interaccion-tactil><button>Interacción táctil</button></a></p>
+			<a href=acelerometro><button>Acelerómetro</button></a></p>
+			<a href=ambos-sensores><button>Ambos sensores</button></a></p>
+
+		</div>
+
+		<!-- FLASK ------------------------------------------------------------------------------------->
+		
+
+	</section>
+
+	<script> 
+
+		loadFirebase();
+		getDeviceInfo();
+
+		//Keyboard
+		window.addEventListener('keydown', keyDown,false);
+		window.addEventListener('keyup', keyUp,false);
+		//Mouse
+		window.addEventListener("mousemove", mouseMove);
+		window.addEventListener("mousedown", mouseDown); 
+		window.addEventListener("mouseleave", mouseLeave);
+		//Touchscreen
+		window.addEventListener("touchstart", touchStart, false);
+		window.addEventListener("touchmove", touchMove, false);
+		window.addEventListener("touchend", touchEnd, false);
+		window.addEventListener("touchcancel", touchCancel, false);
+        //Accelerometer
+        askPermissionAndRun('accelerometer',accelerometer());
+        //Magnetometer
+        askPermissionAndRun('magnetometer',magnetometer());
+        //Gyroscope
+        askPermissionAndRun('gyroscope',gyroscope());
+        //Device Orientation
+        window.addEventListener("deviceorientation", handleOrientation, true);
+
+        //Parar la captura de los sensores tras 5 minutos
+        //setTimeout(stopSensors,300000);
+
+		// }
+
+//Cerrar web tras 5 minutos
+/*setTimeout(
+	function(){
+		window.location.href = './t.txt';
+	}, 300000 );*/
+
+
+
+
+</script>
+
+</body>
+</html>

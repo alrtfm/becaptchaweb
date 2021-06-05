@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>BeCaptchaWeb</title>  
+	<!-- .............................. SCRIPTS .............................. -->
+	<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='stylesheet.css') }}">
+	<!-- FIREBASE -->
+	<script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-app.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-database.js"></script>
+	<!-- READ INFO SCRIPT -->
+	<script src="{{ url_for('static',filename='readinfo.js') }}"> </script>
+	<!-- JQUERY -->
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+
+	<!-- .............................. SCRIPTS .............................. -->
+</head>
+
+<body>
+	<section class="container">
+		<div class="box3">
+			<h2>Demostrador del sensor de aceleración</h2>
+			Opciones:
+			<ol>
+				<li>Generar una seuencia a partir de ruido aleatorio gaussiano. Empleando el generador entrenado con la GAN.</li>
+				<li>Observar el vector de aceleración asociado a la interacción táctil registrada previamente (si esta se registró).</li>
+			</ol>
+
+			Opcion 1: <button onclick="showbox('ganbox')">Generar secuencia a partir de ruido aleatorio</button>
+			Opcion 2: <button onclick="showbox('laccbox')">Ver aceleración registrada</button>
+
+		</div>
+		<div class="box2">
+			<p align="center"><a href=/><button>Volver</button></a></p>
+		</div>
+
+		<div id="laccbox" style="display:none">
+		  	Por hacer...
+		</div>
+		<!-- Mostrar plot devuelto a JS del swipe generado -->
+		<div id="output"></div>
+
+		<div id="ganbox" style="display:none">Cargando red neuronal...</div>
+
+	</section>
+
+	<script> 
+
+		function showbox(box){
+			//Mostrar u ocultar la caja que sea
+		    var x = document.getElementById(box);
+		    if (x.style.display === "none"){x.style.display = "block";}
+		    else {x.style.display = "none";}
+
+		    if (box=='ganbox'){
+		    	//Enviarlo peticion a FLASK para generar lacc
+		    	var seq = 'generateAlacc';
+		        $.ajax({
+		            type: 'POST',
+		            url: "/rcv_laccGANrequest",
+		            contentType: 'application/json;charset=UTF-8',  
+		            data: JSON.stringify(seq),
+		            success: function (data) {
+		                //Añadir el codigo HTML recibido de FLASK a la web a traves del objeto HTML 'output'
+		                $('#output').html(data);
+		            }
+		        });
+		    console.log("Secuencia de GAN recibida")
+		    }
+		    else if (box=='laccbox'){
+		    	//send_registered_lacc()
+		    	var seq = {couldread: window.accelerometer_supported, x: window.laccduringswipe_x, y: window.laccduringswipe_y, z: window.laccduringswipe_z};
+			    $.ajax({
+			        type: 'POST',
+			        url: "/rcv_lacc",
+			        contentType: 'application/json;charset=UTF-8',  
+			        data: JSON.stringify(seq),
+			        success: function (data) {
+			            //Añadir el codigo HTML recibido de FLASK a la web a traves del objeto HTML 'output'
+			            $('#output').html(data);
+			        }
+			    });
+		    }
+		}
+</script>
+
+</body>
+</html>

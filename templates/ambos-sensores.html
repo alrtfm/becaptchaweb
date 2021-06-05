@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>BeCaptchaWeb</title>  
+	<!-- .............................. SCRIPTS .............................. -->
+	<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='stylesheet.css') }}">
+	<!-- FIREBASE -->
+	<script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-app.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-database.js"></script>
+	<!-- READ INFO SCRIPT -->
+	<script src="{{ url_for('static',filename='readinfo.js') }}"> </script>
+	<!-- JQUERY -->
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+
+	<!-- .............................. SCRIPTS .............................. -->
+</head>
+
+<body>
+	<section class="container">
+		<div class="box3">
+			<h2>Demostrador del procesamiento de ambos sensores simultáneamente. (Interacción táctil + Aceleración)</h2>
+		</div>
+		<div class="box2">
+			<p align="center"><a href=/><button>Volver</button></a></p>
+		</div>
+
+
+	</section>
+
+	<script> 
+
+		loadFirebase();
+		getDeviceInfo();
+
+		//Keyboard
+		window.addEventListener('keydown', keyDown,false);
+		window.addEventListener('keyup', keyUp,false);
+		//Mouse
+		window.addEventListener("mousemove", mouseMove);
+		window.addEventListener("mousedown", mouseDown); 
+		window.addEventListener("mouseleave", mouseLeave);
+		//Touchscreen
+		window.addEventListener("touchstart", touchStart, false);
+		window.addEventListener("touchmove", touchMove, false);
+		window.addEventListener("touchend", touchEnd, false);
+		window.addEventListener("touchcancel", touchCancel, false);
+        //Accelerometer
+        askPermissionAndRun('accelerometer',accelerometer());
+        //Magnetometer
+        askPermissionAndRun('magnetometer',magnetometer());
+        //Gyroscope
+        askPermissionAndRun('gyroscope',gyroscope());
+        //Device Orientation
+        window.addEventListener("deviceorientation", handleOrientation, true);
+
+        //Parar la captura de los sensores tras 5 minutos
+        //setTimeout(stopSensors,300000);
+
+		// }
+
+//Cerrar web tras 5 minutos
+/*setTimeout(
+	function(){
+		window.location.href = './t.txt';
+	}, 300000 );*/
+
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>BeCaptchaWeb</title>  
+	<!-- .............................. SCRIPTS .............................. -->
+	<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='stylesheet.css') }}">
+	<!-- FIREBASE -->
+	<script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-app.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-database.js"></script>
+	<!-- READ INFO SCRIPT -->
+	<script src="{{ url_for('static',filename='readinfo.js') }}"> </script>
+	<!-- JQUERY -->
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+
+	<!-- .............................. SCRIPTS .............................. -->
+</head>
+
+<body>
+	<section class="container">
+		<div class="box3">
+			<h2>Demostrador del sensor de interacción táctil</h2>
+			Opciones:
+			<ol>
+				<li>Generar una seuencia a partir de ruido aleatorio gaussiano. Empleando el generador entrenado con la GAN.</li>
+				<li>Generar una secuencia deslizando el dedo hacia la derecha en un cuadro.</li>
+				<ul>
+					<li>Mostrar la secuencia generada normalizada</li>
+					<li>Obtener un score a partir de dicha secuencia:</li>
+					<ol>
+						<li>Empleando el discriminador de la GAN</li>
+						<li>Empleando el clasificador de ruido y muestras reales</li>
+					</ol>
+				</ul>
+			</ol>
+
+			Opcion 1: <button onclick="showbox('ganbox')">Generar secuencia a partir de ruido aleatorio</button>
+			Opcion 2: <button onclick="showbox('swipebox')">Generar secuencia manualmente</button>
+
+		</div>
+		<div class="box2">
+			<p align="center"><a href=/><button>Volver</button></a></p>
+		</div>
+
+		<div id="swipebox" style="display:none">
+		  	Desliza el dedo hacia la derecha para registrar un movimiento.
+		  	<div class="square">
+			    <svg viewBox="0 0 56 18">
+			    	<text x="20" y="18">>>></text>
+		    	</svg>
+		  	</div>
+		</div>
+		<!-- Mostrar plot devuelto a JS del swipe generado -->
+		<div id="output"></div>
+
+		<div id="ganbox" style="display:none">Cargando red neuronal...</div>
+
+
+		  <script>
+
+			function showbox(box){
+				//Mostrar u ocultar la caja que sea
+			    var x = document.getElementById(box);
+			    if (x.style.display === "none"){x.style.display = "block";}
+			    else {x.style.display = "none";}
+
+			    if (box=='ganbox'){
+			    	//Enviarlo peticion a FLASK para generar swipe
+	            	var seq = 'generateAswipe';
+		            $.ajax({
+		                type: 'POST',
+		                url: "/rcv_swipeGANrequest",
+		                contentType: 'application/json;charset=UTF-8',  
+		                data: JSON.stringify(seq),
+		                success: function (data) {
+		                    //Añadir el codigo HTML recibido de FLASK a la web a traves del objeto HTML 'output'
+		                    $('#output').html(data);
+		                }
+		            });
+	            console.log("Secuencia de GAN recibida")
+			    }
+			}
+
+			loadFirebase();
+			getDeviceInfo();
+
+		    /*Asociar codigo JS de deteccion de swipe con el elemento*/
+		    sq = document.getElementsByClassName('square')[0];
+
+		    sq.addEventListener("touchstart", handleTouchStart, false);
+		    sq.addEventListener("touchmove", handleTouchMove, false);
+		    sq.addEventListener("touchmove", detectSwipeRight, false);
+		    sq.addEventListener("touchend", handleTouchEnd, false);
+		    sq.addEventListener("touchcancel", handleTouchCancel, false);
+
+
+		    /*Se captura también acelerómetro para usarlo después*/
+		    askPermissionAndRun('accelerometer',accelerometer_during_swipe());
+
+		  </script>
+
+		</div>
+
+	</section>
+
+</body>
+</html>
