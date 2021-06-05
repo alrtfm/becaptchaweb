@@ -506,5 +506,5 @@ def ambos_sensores():
     return  render_template("acelerometro.html")
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8080, debug=True)
+    app.run()
     #app.run(host="0.0.0.0", port=8080, debug=True, ssl_context='adhoc')
