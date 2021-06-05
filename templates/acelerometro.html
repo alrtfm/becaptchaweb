@@ -54,6 +54,7 @@
 		    else {x.style.display = "none";}
 
 		    if (box=='ganbox'){
+		    	console.log('Registrando aceleración')
 		    	//Enviarlo peticion a FLASK para generar lacc
 		    	var seq = 'generateAlacc';
 		        $.ajax({
@@ -69,6 +70,7 @@
 		    console.log("Secuencia de GAN recibida")
 		    }
 		    else if (box=='laccbox'){
+		    	console.log('Peticion de secuencia de aceleracion registrada')
 		    	//send_registered_lacc()
 		    	var seq = {couldread: window.accelerometer_supported, x: window.laccduringswipe_x, y: window.laccduringswipe_y, z: window.laccduringswipe_z};
 			    $.ajax({

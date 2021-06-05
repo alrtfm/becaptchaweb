@@ -279,7 +279,6 @@ function askPermissionAndRun(sensor,sensorfunction){
             return;
         }else{
             console.log('Permission to use '+sensor+'sensor is granted.')
-            accelerometer()
         }
     });
 }
@@ -297,14 +296,16 @@ function accelerometer(){
         window.accelerometer = sensor;
         window.accelerometer.start();
     }else console.log('Accelerometer not supported');
-    //Linear Acceleration
-    let laSensor = new LinearAccelerationSensor({frequency: window.freq});
-    laSensor.addEventListener('reading', e => {
-        console.log('Linear accelerometer reads x: ' + laSensor.x+ ' y: ' + laSensor.y + ' z: ' + laSensor.z);
-        pushToFirebase(userid,'Accelerometer',{"type": "Linear", "timestamp": mstime, "X": laSensor.x, "Y": laSensor.y, "Z": laSensor.z,});
-    });
-    window.linear_accelerometer = laSensor;
-    window.linear_accelerometer.start();
+    if ( 'LinearAccelerationSensor' in window ) {
+        //Linear Acceleration
+        let laSensor = new LinearAccelerationSensor({frequency: window.freq});
+        laSensor.addEventListener('reading', e => {
+            console.log('Linear accelerometer reads x: ' + laSensor.x+ ' y: ' + laSensor.y + ' z: ' + laSensor.z);
+            pushToFirebase(userid,'Accelerometer',{"type": "Linear", "timestamp": mstime, "X": laSensor.x, "Y": laSensor.y, "Z": laSensor.z,});
+        });
+        window.linear_accelerometer = laSensor;
+        window.linear_accelerometer.start();
+    }else console.log('Linear accelerometer not supported');
 }
 
 //MAGNETOMETER -----------------------------------------------------------------------
@@ -401,6 +402,9 @@ function handleTouchStart(event) {
         console.log("swipe start")
         //Arrancar la captura del acelerometro
         if (window.accelerometer_supported != 0){
+            window.laccduringswipe_x = []
+            window.laccduringswipe_y = []
+            window.laccduringswipe_z = []
             accelerometer_during_swipe()
         }
     }
@@ -534,9 +538,6 @@ function handleTouchCancel(event) {
 
 
 function accelerometer_during_swipe(){
-    window.laccduringswipe_x = []
-    window.laccduringswipe_y = []
-    window.laccduringswipe_z = []
     var mstime = new Date().getTime();
     //Linear Acceleration
     if ( 'LinearAccelerationSensor' in window ) {
@@ -546,7 +547,7 @@ function accelerometer_during_swipe(){
             window.laccduringswipe_x.push(laSensor.x)
             window.laccduringswipe_y.push(laSensor.y)
             window.laccduringswipe_z.push(laSensor.z)
-            console.log(window.laccduringswipe_x)
+            console.log('lectura vector x del lacc: '+ window.laccduringswipe_x)
             pushToFirebase(userid,'Accelerometer',{"type": "Linear", "timestamp": mstime, "X": laSensor.x, "Y": laSensor.y, "Z": laSensor.z,});
         });
         window.linear_accelerometer = laSensor;
@@ -557,8 +558,3 @@ function accelerometer_during_swipe(){
         alert('No puede leerse el sensor de aceleración');
     }
 }
-
-//function send_registered_lacc(){
-    //Enviarlo a FLASK
-    
-//}
