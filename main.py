@@ -1,12 +1,9 @@
-from getDatabase import download_db
-from read_json import clean_database
-
 from timeit import default_timer as timer
-
 from flask import Flask, request, render_template, jsonify
 
 import io
 import base64
+import numpy as np
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -16,12 +13,6 @@ import keras
 from keras import backend as K
 from keras.models import Model, load_model
 from keras.layers import Dense, Input, Masking, Lambda, TimeDistributed, LSTM, LeakyReLU, Bidirectional, RepeatVector, Concatenate
-
-import numpy as np
-
-#Evitar cargar GPU (Solo local)
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 ########################################################################
 
@@ -211,25 +202,6 @@ def predict_on_model(model,sequence):
     # Devuelve un score para la secuencia de entrada
     score = model.predict(sequence)
     return score
-
-def get_database():
-    # Descarga y limpieza de BD
-    
-    db_name = 'database.json'
-    start = timer()
-    # Descargar BD desde Google
-    download_db(db_name)
-    end = timer()
-    p1 = 'Tiempo lectura de la ultima conexion: {:.2f} segundos'.format(end-start)
-    
-    start = timer()
-    # Limpiar IDs aleatorios de google
-    clean_db = clean_database(db_name)
-    end = timer()
-    p2 = 'Tiempo procesado de la ultima conexion: {:.2f} segundos'.format(end-start)
-    
-    return p1,p2,clean_db
-
 
 def get_swipe_gesture(clean_db):
     # Obtener el ultimo gesto de swipe
