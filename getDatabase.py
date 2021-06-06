@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Nov 22 20:31:44 2020
-
-@author: yesh
-"""
 
 def download_db(filename):
     import pyrebase

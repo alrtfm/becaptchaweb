@@ -562,6 +562,6 @@ function accelerometer_during_swipe(){
         sessionStorage.setItem("accelerometer_supported", JSON.stringify(1));
     }else {
         sessionStorage.setItem("accelerometer_supported", JSON.stringify(0));
-        alert('No puede leerse el sensor de aceleración');
+        //alert('No puede leerse el sensor de aceleración');
     }
 }
