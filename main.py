@@ -13,10 +13,15 @@ from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
 import keras
+from keras import backend as K
 from keras.models import Model, load_model
-from keras.layers import Dense, Input, Masking, Lambda, TimeDistributed, LSTM, LeakyReLU, Bidirectional
+from keras.layers import Dense, Input, Masking, Lambda, TimeDistributed, LSTM, LeakyReLU, Bidirectional, RepeatVector, Concatenate
 
 import numpy as np
+
+#Evitar cargar GPU (Solo local)
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 ########################################################################
 
@@ -48,6 +53,13 @@ def load_swipe_classifier():
 
     return Classifier_swipe_model
 
+def load_swipe_classifier2():
+    #Carga del modelo del clasificador FAKE vs REAL de SWIPE (NO el discriminador)
+    Classifier_swipe_model = load_model('./GAN/swipe_classifier2/SWIPE_classificador_fake-real.h5')
+    Classifier_swipe_model.load_weights('./GAN/swipe_classifier2/SWIPE_classificador_fake-real_solopesos.h5')
+
+    return Classifier_swipe_model
+
 def load_swipe_discriminator():
     #Carga del modelo del discriminador de SWIPE
     Discriminator_input = Input(shape = (LEN_SEQUENCES_SWIPE, LEN_FEATURES_SWIPE), dtype= 'float32')
@@ -69,19 +81,9 @@ def load_swipe_discriminator():
 
 def load_swipe_generator():
     #Cargar modelo del generador de SWIPE
-    Generator_input = Input(shape =(None,LEN_FEATURES_SWIPE), dtype= 'float32')
-    G = LSTM(units = 32, activation = 'relu',return_sequences = True)(Generator_input)
-    #G = Lambda(repeat_vector, output_shape=(None, LEN_FEATURES_SWIPE)) ([G, Generator_input])
-    G = LSTM(units = 16, activation = 'relu', return_sequences = True)(G)
-    G = TimeDistributed(Dense(LEN_FEATURES_SWIPE))(G)   
-    G = Lambda(lambda x: x-x[:,0:1,:])(G)
-    Generator_model =  Model(Generator_input, G, name='Generator')
+    Generator_model = load_model('./GAN/swipe_generator/solo_swipe_gen_step550.h5')
     Generator_optimizer = keras.optimizers.Nadam(lr=0.0002, beta_1=0.5,epsilon=1e-8)    
     Generator_model.compile(optimizer=Generator_optimizer, loss='mse')
-    
-    #Cargar pesos del generador ya entrenado ----------------------------------
-    stp=550
-    Generator_model = load_model('./GAN/swipe_generator/solo_swipe_gen_step{}.h5'.format(stp))
     
     return Generator_model
 
@@ -119,6 +121,13 @@ def load_lacc_classifier():
     #Carga de los pesos del modelo ya entrenado
     Classifier_lacc_model.load_weights('./GAN/lacc_classifier/LACC_classificador_ruido-real.h5')
     Classifier_lacc_model.load_weights('./GAN/lacc_classifier/LACC_classificador_ruido-real_solopesos.h5')
+
+    return Classifier_lacc_model
+
+def load_lacc_classifier2():
+    #Carga del modelo del clasificador RUIDO vs REAL de LACC (NO el discriminador)
+    Classifier_lacc_model = load_model('./GAN/lacc_classifier2/LACC_classificador_fake-real.h5')
+    Classifier_lacc_model.load_weights('./GAN/lacc_classifier2/LACC_classificador_fake-real_solopesos.h5')
 
     return Classifier_lacc_model
 
@@ -168,6 +177,36 @@ def generate_fake_sequence_lacc(Generator_model):
     
 ##-----------------------------------------------------------------------------
 
+def load_2path2sensor_discriminator():
+
+    Discriminator_input = Input(shape = (LEN_SEQUENCES_LACC, 5), dtype= 'float32')
+    D = Masking(mask_value=0,input_shape=(LEN_SEQUENCES_LACC, 5))(Discriminator_input)
+    D = Bidirectional(LSTM(units = 64))(Discriminator_input)
+    D = Dense(1, activation = 'sigmoid')(D)
+    Discriminator_model =  Model(Discriminator_input, D, name='Discriminator')
+    Discriminator_optimizer = keras.optimizers.Adam(lr=0.0002, beta_1=0.5)
+    Discriminator_model.compile(loss= 'binary_crossentropy', optimizer=Discriminator_optimizer)    
+
+    Discriminator_model.load_weights('./GAN/2path2sensor_discriminator/2s2path_dis_step220.h5') 
+    
+    return Discriminator_model
+
+def repeat_vector(args):
+    # Para poder tener batches fake de longitud variable usando capas RepeatVector
+    layer_to_repeat = args[0]
+    sequence_layer = args[1]
+    return RepeatVector(K.shape(sequence_layer)[1])(layer_to_repeat)
+
+def load_2path2sensor_generator():
+
+    Generator_model = load_model('./GAN/2path2sensor_generator/2s2path_gen_step220.h5')
+    Generator_optimizer = keras.optimizers.Adam(lr=0.0002, beta_1=0.5) 
+    Generator_model.compile(optimizer=Generator_optimizer, loss='mse')
+
+    return Generator_model
+
+##-----------------------------------------------------------------------------
+
 def predict_on_model(model,sequence):  
     # Devuelve un score para la secuencia de entrada
     score = model.predict(sequence)
@@ -203,71 +242,30 @@ def get_swipe_gesture(clean_db):
 
     return swX,swY,swT
 
-def plotView(sequence,sensor):
-    # Mostrar un plot por pantalla
 
-    if sequence != "":
-        
-        if sensor=="swipe":
-            #Eliminar la "vuelta a cero" de los plots
-            x2_gen = sequence[0][:,0].copy()
-            y2_gen = sequence[0][:,1].copy()
-            for e in range(len(sequence[0][:,0])-1,1,-1):
-                if x2_gen[e] == 0.00000000e+00 and y2_gen[e] == 0.00000000e+00:
-                    x2_gen = np.delete(x2_gen, e)
-                    y2_gen = np.delete(y2_gen, e)
-            
-            # Generate plot
-            fig = Figure()
-            axis = fig.add_subplot(1, 1, 1)
-            axis.set_title("Secuencia de interacción táctil generada por la red GAN")
-            axis.set_xlabel("X")
-            axis.set_ylabel("Y")
-            axis.grid()
-            axis.plot(x2_gen, y2_gen, "ro-")
-            
-        elif sensor=="lacc":
-            #Eliminar la "vuelta a cero" de los plots
-            x2_gen = sequence[0][:,0].copy()
-            y2_gen = sequence[0][:,1].copy()
-            z2_gen = sequence[0][:,2].copy()
-            for e in range(len(sequence[0][:,0])-1,1,-1):
-                if x2_gen[e] == 0.00000000e+00 and y2_gen[e] == 0.00000000e+00 and z2_gen[e] == 0.00000000e+00:
-                    x2_gen = np.delete(x2_gen, e)
-                    y2_gen = np.delete(y2_gen, e)
-                    z2_gen = np.delete(z2_gen, e)
-                    
-            # ACELEROMETRO vs NUM MUESTRAS
-            fig, axs = plt.subplots(3, 1)
-            #fig.set_title("Secuencia de aceleración generada por la red GAN")
-            fig.tight_layout(pad=2)
-            axs[0].set_title('X')
-            axs[0].plot(x2_gen,color='r',ls='--')
-            axs[1].set_title('Y')
-            axs[1].plot(y2_gen,color='g',ls='--')
-            axs[2].set_title('Z')
-            axs[2].plot(z2_gen,color='b',ls='--')
-
-        # Convert plot to PNG image
-        pngImage = io.BytesIO()
-        FigureCanvas(fig).print_png(pngImage)
-        
-        # Encode PNG image to base64 string
-        pngImageB64String = "data:image/png;base64,"
-        pngImageB64String += base64.b64encode(pngImage.getvalue()).decode('utf8')
-        
-        return render_template("image.html", image=pngImageB64String)
+def botorhuman_img(score, threshold):
+    #Muestra imagen de bot o humano dependiendo del umbral en funcion del score
+    if score <= threshold:
+        res_img = '<img src="/static/human.png" alt="Humano">'
     else:
-        return ""
-    
+        res_img = '<img src="/static/bot.png" alt="Bot">'
+
+    return res_img
+
 ###############################################################################
 # Precarga de modelos con la web
 classifier_swipe = load_swipe_classifier()
+classifier_swipe2 = load_swipe_classifier2()
 generator_swipe = load_swipe_generator()
 discriminator_swipe = load_swipe_discriminator()
+classifier_lacc2 = load_lacc_classifier2()
 classifier_lacc = load_lacc_classifier()
 generator_lacc = load_lacc_generator()
 discriminator_lacc = load_lacc_discriminator()
+
+generator_2path2sensor = load_2path2sensor_generator()
+discriminator_2path2sensor = load_2path2sensor_discriminator()
+
 ###############################################################################
     
 @app.route("/", methods=["GET","POST"])
@@ -310,12 +308,24 @@ def receive_swipe_GAN_request():
         #Obtener scores
         score1 = predict_on_model(classifier_swipe,sequence)
         score2 = predict_on_model(discriminator_swipe,sequence)
+        score3 = predict_on_model(classifier_swipe2,sequence)
+
+        img_score1 = botorhuman_img(score1,0.5)
+        img_score2 = botorhuman_img(score2,0.3)
+        img_score3 = botorhuman_img(score3,0.55)
         
         return (render_template("image.html", image=pngImageB64String)
-                    + "Score obtenido empleando el clasificador entre ruido y secuencias reales: "
-                    + str(score1) +"<br>"
-                    + "Score obtenido empleando el discriminador de la red GAN: "
-                    + str(score2) +"<br>"
+                    + '<script> var x = document.getElementById("ganbox"); x.style.display = "none"; </script>'
+                    + '<script> var x = document.getElementById("swipebox"); x.style.display = "none"; </script>'
+                    + '<ul><li>Score obtenido empleando el <strong>clasificador entre ruido y secuencias reales</strong>:</li><ul class="no-bullets"><li>'
+                    + str(score1[0])+img_score1
+                    + '</li></ul><ul><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Es la GAN capaz de generar secuencias muy similares a las humanas?</li></ul>'
+                    +'<li>Score obtenido empleando el <strong>discriminador de la red GAN</strong>:</li><ul class="no-bullets"><li>'
+                    + str(score2[0])+img_score2
+                    + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Bot.</li><li style="color:blue;">Interpretación: ¿Es el discriminador de la GAN capaz de distinguir entre bot y humano?</li></ul>'
+                    +'<li>Score obtenido empleando el <strong>clasificador entre secuencias reales y generadas por la GAN</strong>:</li><ul class="no-bullets"><li>'
+                    + str(score3[0])+img_score3
+                    + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Bot.</li><li style="color:blue;">Interpretación: ¿Es el clasificador capaz de distinguir entre bot y humano?</li></ul></ul>'
         )
     else:
         return ('',204)
@@ -363,12 +373,23 @@ def receive_swipe():
         #Obtener scores
         score1 = predict_on_model(classifier_swipe,subswipe)
         score2 = predict_on_model(discriminator_swipe,subswipe)
+        score3 = predict_on_model(classifier_swipe2,subswipe)
+
+        img_score1 = botorhuman_img(score1,0.5)
+        img_score2 = botorhuman_img(score2,0.6)
+        img_score3 = botorhuman_img(score3,0.55)
         
         return (render_template("image.html", image=pngImageB64String)
-                    + "Score obtenido empleando el clasificador entre ruido y secuencias reales: "
-                    + str(score1) +"<br>"
-                    + "Score obtenido empleando el discriminador de la red GAN: "
-                    + str(score2) +"<br>"
+                    + '<script> var x = document.getElementById("ganbox"); x.style.display = "none"; </script>'
+                    + '<ul><li>Score obtenido empleando el <strong>clasificador entre ruido y secuencias reales</strong>:</li><ul class="no-bullets"><li>'
+                    + str(score1[0])+img_score1
+                    + '</li></ul><ul><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Se ha registrado una secuencia realista, o solo ruido?</li></ul>'
+                    +'<li>Score obtenido empleando el <strong>discriminador de la red GAN</strong>:</li><ul class="no-bullets"><li>'
+                    + str(score2[0])+img_score2
+                    + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Es el discriminador de la GAN capaz de distinguir entre bot y humano?</li></ul>'
+                    +'<li>Score obtenido empleando el <strong>clasificador entre secuencias reales y generadas por la GAN</strong>:</li><ul class="no-bullets"><li>'
+                    + str(score3[0])+img_score3
+                    + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Es el clasificador capaz de distinguir entre bot y humano?</li></ul></ul>'
         )
     else:
         return ('',204)
@@ -384,6 +405,7 @@ def receive_lacc_GAN_request():
         sequence = generate_fake_sequence_lacc(generator_lacc)
         score1 = predict_on_model(classifier_lacc,sequence)
         score2 = predict_on_model(discriminator_lacc,sequence)
+        score3 = predict_on_model(classifier_lacc2,sequence)
         
         #Eliminar la "vuelta a cero" de los plots
         x2_gen = sequence[0][:,0].copy()
@@ -413,12 +435,23 @@ def receive_lacc_GAN_request():
         # Encode PNG image to base64 string
         pngImageB64String = "data:image/png;base64,"
         pngImageB64String += base64.b64encode(pngImage.getvalue()).decode('utf8')
+
+        img_score1 = botorhuman_img(score1,0.5)
+        img_score2 = botorhuman_img(score2,0.6)
+        img_score3 = botorhuman_img(score3,0.5)
         
         return (render_template("image.html", image=pngImageB64String)
-                    + "Score obtenido empleando el clasificador entre ruido y secuencias reales: "
-                    + str(score1) +"<br>"
-                    + "Score obtenido empleando el discriminador de la red GAN: "
-                    + str(score2) +"<br>"
+                    + '<script> var x = document.getElementById("ganbox"); x.style.display = "none"; </script>'
+                    + '<script> var x = document.getElementById("laccbox"); x.style.display = "none"; </script>'
+                    + '<ul><li>Score obtenido empleando el <strong>clasificador entre ruido y secuencias reales</strong>:</li><ul class="no-bullets"><li>'
+                    + str(score1[0])+img_score1
+                    + '</li></ul><ul><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Es la GAN capaz de generar secuencias muy similares a las humanas?</li></ul>'
+                    +'<li>Score obtenido empleando el <strong>discriminador de la red GAN</strong>:</li><ul class="no-bullets"><li>'
+                    + str(score2[0])+img_score2
+                    + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Bot.</li><li style="color:blue;">Interpretación: ¿Es el discriminador de la GAN capaz de distinguir entre bot y humano?</li></ul>'
+                    +'<li>Score obtenido empleando el <strong>clasificador entre secuencias reales y generadas por la GAN</strong>:</li><ul class="no-bullets"><li>'
+                    + str(score3[0])+img_score3
+                    + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Bot.</li><li style="color:blue;">Interpretación: ¿Es el clasificador capaz de distinguir entre bot y humano?</li></ul></ul>'
         )
     else:
         return ('',204)
@@ -429,30 +462,16 @@ def receive_lacc():
         
     if request.method == 'POST':
             
-            # SACAR SEQS DE LACC A PARTIR DEL SUBSWIPE: CON LOS TIMESTAMPS!!
-            # NECESITO RECIBIRLOS DE JS!
-            # Y GUARDAR EL LACC Y ENVIARLO TAMBIEN
-            # MEJOR DESDE JS TODO (?)
-            
             seq = request.json
             x = np.array(seq['x'])
             y = np.array(seq['y'])
             z = np.array(seq['z'])
+
             lacc_available = np.array(seq['couldread'])
             
-            print("Acelerometro soportado = " + str(lacc_available))
-            
-            if lacc_available==1:
-            
-                print("............")
-                print(x)
-                print("............")
-                print(y)
-                print("............")
-                print(z)
-                print("............")
-                
-                sequence = np.vstack((x,y)).T
+            if str(lacc_available)=='1' and str(x)!='null' and str(x)!=None and str(x)!='None':
+
+                sequence = np.vstack((x,y,z)).T
                 
                 # ACELEROMETRO vs NUM MUESTRAS
                 fig, axs = plt.subplots(3, 1)
@@ -486,25 +505,111 @@ def receive_lacc():
                 sublacc = np.reshape(sublacc,(1,LEN_SEQUENCES_LACC,LEN_FEATURES_LACC))
         
                 #Obtener scores
-                score1 = predict_on_model(classifier_swipe,sublacc)
-                score2 = predict_on_model(discriminator_swipe,sublacc)
+                score1 = predict_on_model(classifier_lacc,sublacc)
+                score2 = predict_on_model(discriminator_lacc,sublacc)
+                score3 = predict_on_model(classifier_lacc2,sublacc)
+
+                img_score1 = botorhuman_img(score1,0.5)
+                img_score2 = botorhuman_img(score2,0.6)
+                img_score3 = botorhuman_img(score3,0.5)
             
                 return (render_template("image.html", image=pngImageB64String)
-                            + "Score obtenido empleando el clasificador entre ruido y secuencias reales: "
-                            + str(score1) +"<br>"
-                            + "Score obtenido empleando el discriminador de la red GAN: "
-                            + str(score2) +"<br>"
+                            + '<script> var x = document.getElementById("ganbox"); x.style.display = "none"; </script>'
+                            + '<script> var x = document.getElementById("laccbox"); x.style.display = "none"; </script>'
+                            + '<ul><li>Score obtenido empleando el <strong>clasificador entre ruido y secuencias reales</strong>:</li><ul class="no-bullets"><li>'
+                            + str(score1[0])+img_score1
+                            + '</li></ul><ul><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Se ha registrado una secuencia realista, o solo ruido?</li></ul>'
+                            +'<li>Score obtenido empleando el <strong>discriminador de la red GAN</strong>:</li><ul class="no-bullets"><li>'
+                            + str(score2[0])+img_score2
+                            + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Es el discriminador de la GAN capaz de distinguir entre bot y humano?</li></ul>'
+                            +'<li>Score obtenido empleando el <strong>clasificador entre secuencias reales y generadas por la GAN</strong>:</li><ul class="no-bullets"><li>'
+                            + str(score3[0])+img_score3
+                            + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Es el clasificador capaz de distinguir entre bot y humano?</li></ul></ul>'
                 )
             else:
-                print("No se puede detectar el acelerometro")
-                return ('',204)
+                if (str(x)==None or str(x)=='null' or str(lacc_available)=='1'):
+                    return '<script> var x = document.getElementById("laccbox"); x.style.display = "none"; </script> No se ha registrado interaccion táctil. Debe registrarse un movimiento previamente para capturar la aceleración producida durante el mismo. Puede capturarse <a href=/interaccion-tactil>aquí</a>.'
+                else:
+                    return '<script> var x = document.getElementById("laccbox"); x.style.display = "none"; </script> No se puede detectar el acelerómetro. Pruebe desde Google Chrome o asegúrese de que su dispositivo cuenta con acelerómetro incorporado.'
+    else:
+        return ('',204)
+
+@app.route("/rcv_2path2sensorGANrequest", methods=["POST"])
+def receive_2path2sensor_GAN_request():
+    if request.method == 'POST':
+        
+        sequence = predict_on_model(generator_2path2sensor,np.random.normal(size=(1,LEN_SEQUENCES_LACC,5)))
+        score = predict_on_model(discriminator_2path2sensor,sequence)
+
+        # Swipe -----------------
+        #Eliminar la "vuelta a cero" de los plots
+        x2_gen = sequence[0][:,0].copy()
+        y2_gen = sequence[0][:,1].copy()
+        for e in range(len(sequence[0][:,0])-1,1,-1):
+            if x2_gen[e] == 0.00000000e+00 and y2_gen[e] == 0.00000000e+00:
+                x2_gen = np.delete(x2_gen, e)
+                y2_gen = np.delete(y2_gen, e)
+        
+        # Generate plot
+        fig = Figure()
+        axis = fig.add_subplot(1, 1, 1)
+        axis.set_title("Secuencia de interacción táctil generada por la red GAN")
+        axis.set_xlabel("X")
+        axis.set_ylabel("Y")
+        axis.grid()
+        axis.plot(x2_gen, y2_gen, "ro-")
+        # Convert plot to PNG image
+        pngImage = io.BytesIO()
+        FigureCanvas(fig).print_png(pngImage)
+        # Encode PNG image to base64 string
+        pngImageB64String_swipe = "data:image/png;base64,"
+        pngImageB64String_swipe += base64.b64encode(pngImage.getvalue()).decode('utf8')
+
+        # Lacc -----------------
+        #Eliminar la "vuelta a cero" de los plots
+        x2_gen = sequence[0][:,2].copy()
+        y2_gen = sequence[0][:,3].copy()
+        z2_gen = sequence[0][:,4].copy()
+        for e in range(len(sequence[0][:,0])-1,1,-1):
+            if x2_gen[e] == 0.00000000e+00 and y2_gen[e] == 0.00000000e+00 and z2_gen[e] == 0.00000000e+00:
+                x2_gen = np.delete(x2_gen, e)
+                y2_gen = np.delete(y2_gen, e)
+                z2_gen = np.delete(z2_gen, e)
+                
+        # ACELEROMETRO vs NUM MUESTRAS
+        fig, axs = plt.subplots(3, 1)
+        #fig.set_title("Secuencia de aceleración generada por la red GAN")
+        fig.tight_layout(pad=2)
+        axs[0].set_title('X')
+        axs[0].plot(x2_gen,color='r',ls='--')
+        axs[1].set_title('Y')
+        axs[1].plot(y2_gen,color='g',ls='--')
+        axs[2].set_title('Z')
+        axs[2].plot(z2_gen,color='b',ls='--')
+
+        # Convert plot to PNG image
+        pngImage = io.BytesIO()
+        FigureCanvas(fig).print_png(pngImage)
+        # Encode PNG image to base64 string
+        pngImageB64String_lacc = "data:image/png;base64,"
+        pngImageB64String_lacc += base64.b64encode(pngImage.getvalue()).decode('utf8')
+        
+        img_score = botorhuman_img(score,0.5)
+
+        return (render_template("image.html", image=pngImageB64String_swipe)
+            + render_template("image.html", image=pngImageB64String_lacc)
+            + '<script> var x = document.getElementById("ganbox"); x.style.display = "none"; </script>'
+            + '<ul><li>Score obtenido empleando el discriminador de la red GAN:</li><ul class="no-bullets"><li>'
+            + str(score[0])+img_score
+            + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Bot.</li><li style="color:blue;">Interpretación: ¿Es el discriminador de la GAN capaz de distinguir entre bot y humano?</li></ul></ul>'
+        )
     else:
         return ('',204)
 
 @app.route("/ambos-sensores", methods=["GET","POST"])
 def ambos_sensores():
-    return  render_template("acelerometro.html")
+    return  render_template("ambos-sensores.html")
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8080, debug=True)
+    app.run()
     #app.run(host="0.0.0.0", port=8080, debug=True, ssl_context='adhoc')

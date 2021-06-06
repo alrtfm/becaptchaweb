@@ -23,47 +23,119 @@
 			<h2>Demostrador del sensor de interacción táctil</h2>
 			Opciones:
 			<ol>
-				<li>Generar una seuencia a partir de ruido aleatorio gaussiano. Empleando el generador entrenado con la GAN.</li>
+				<li>Generar una secuencia a partir de ruido aleatorio gaussiano. Empleando el generador entrenado con la GAN.</li>
 				<li>Generar una secuencia deslizando el dedo hacia la derecha en un cuadro.</li>
 				<ul>
 					<li>Mostrar la secuencia generada normalizada</li>
-					<li>Obtener un score a partir de dicha secuencia:</li>
-					<ol>
-						<li>Empleando el discriminador de la GAN</li>
-						<li>Empleando el clasificador de ruido y muestras reales</li>
-					</ol>
+					<li>Obtener un score a partir de dicha secuencia</li>
 				</ul>
 			</ol>
-
-			Opcion 1: <button onclick="showbox('ganbox')">Generar secuencia a partir de ruido aleatorio</button>
-			Opcion 2: <button onclick="showbox('swipebox')">Generar secuencia manualmente</button>
-
+			<ul>
+				<li>En cada caso se muestra el score de clasificación obtenido:</li>
+				<ul>
+					<li>Empleando el clasificador de ruido y muestras reales</li>
+					<li>Empleando el discriminador de la GAN</li>
+					<li>Empleando el clasificador de muestras reales y generadas con la GAN</li>
+				</ul>
+			</ul>
+			<ul class="no-bullets">
+				<li>Opción 1:</li>
+				<ul class="no-bullets">
+					<li><button onclick="showbox('ganbox')">Generar secuencia a partir de ruido aleatorio</button></li>
+				</ul>
+				<li>Opción 2:</li>
+				<ul class="no-bullets">
+					<li><button onclick="showbox('swipebox')">Generar secuencia manualmente</button></li>
+				</ul>
+			</ul>
 		</div>
-		<div class="box2">
-			<p align="center"><a href=/><button>Volver</button></a></p>
-		</div>
-
+		
+		
 		<div id="swipebox" style="display:none">
 		  	Desliza el dedo hacia la derecha para registrar un movimiento.
 		  	<div class="square">
 			    <svg viewBox="0 0 56 18">
-			    	<text x="20" y="18">>>></text>
+			    	<img src="/static/swipe_right.png" class="swipeimg">
 		    	</svg>
 		  	</div>
+		  	La lectura del acelerómetro registrada durante el movimiento puede verse en la sección "Acelerómetro".
 		</div>
 		<!-- Mostrar plot devuelto a JS del swipe generado -->
 		<div id="output"></div>
-
-		<div id="ganbox" style="display:none">Cargando red neuronal...</div>
-
-
+		<div id="ganbox" style="display:none">Cargando red neuronal...<img src="/static/loader.gif" alt="Cargando..."></div>
+		<div class="box5">
+			Información de clasificación humano/bot:
+			<ul>
+				<li>Generador empleado:</li>
+				<button id="btn_model_4">Ver modelo</button>
+				<div id="modal_model_4" class="modal" style="display:none">
+				  <div class="modal-content">
+				    <button id="close4" class="close">&times;</button>
+				    <p><img src="/static/swipe_generator_model.png"></p>
+				  </div>
+				</div>				
+				<li>Detectores empleados:</li>
+					<ul>
+						<li>1) Clasificador Ruido vs Secuencias reales (de HuMIdB)</li>
+						<button id="btn_model_1">Ver modelo</button>
+						<div id="modal_model_1" class="modal" style="display:none">
+						  <div class="modal-content">
+						    <button id="close1" class="close">&times;</button>
+						    <p><img src="/static/classifier_model.png"></p>
+						  </div>
+						</div>				
+						<li>2) Discriminador de la red GAN</li>
+						<button id="btn_model_2">Ver modelo</button>
+						<div id="modal_model_2" class="modal" style="display:none">
+						  <div class="modal-content">
+						    <button id="close2" class="close">&times;</button>
+						    <p><img src="/static/swipe_discriminator_model.png"></p>
+						  </div>
+						</div>
+						<li>3)  Clasificador Secuencias generadas con GAN vs reales (de HuMIdB)</li>
+						<button id="btn_model_3">Ver modelo</button>
+						<div id="modal_model_3" class="modal" style="display:none">
+						  <div class="modal-content">
+						    <button id="close3" class="close">&times;</button>
+						    <p><img src="/static/classifier_model.png"></p>
+						  </div>
+						</div>
+					</ul>
+				<li>Interpretación del score:</li>
+				<ul>
+					<li>Humano: Si score cercano a 0</li>
+					<li>Bot: Si score cercano a 1</li>
+				</ul>
+			</ul>
+		</div>
+		<div class="box2"><p align="center"><a href=/><button>Volver</button></a></p></div>
 		  <script>
 
+		  	loadFirebase();
+			getDeviceInfo();
+
+			// Codigo para ver modelo NN
+			function showmodal(model_btn,btn_id,close_id){
+				var modal = document.getElementById(model_btn);
+				var btn = document.getElementById(btn_id);
+				var span = document.getElementById(close_id);
+				btn.onclick = function() {modal.style.display = "block";}
+				span.onclick = function() {modal.style.display = "none";}
+			}
+
+			showmodal("modal_model_1","btn_model_1","close1");
+			showmodal("modal_model_2","btn_model_2","close2");
+			showmodal("modal_model_3","btn_model_3","close3");
+			showmodal("modal_model_4","btn_model_4","close4");
+
+		  	sessionStorage.setItem("accelerometer_supported", -1);
+
 			function showbox(box){
-				//Mostrar u ocultar la caja que sea
+
+				document.getElementById("output").innerHTML = "";
+				//Mostrar caja correspondiente
 			    var x = document.getElementById(box);
 			    if (x.style.display === "none"){x.style.display = "block";}
-			    else {x.style.display = "none";}
 
 			    if (box=='ganbox'){
 			    	//Enviarlo peticion a FLASK para generar swipe
@@ -81,9 +153,6 @@
 	            console.log("Secuencia de GAN recibida")
 			    }
 			}
-
-			loadFirebase();
-			getDeviceInfo();
 
 		    /*Asociar codigo JS de deteccion de swipe con el elemento*/
 		    sq = document.getElementsByClassName('square')[0];

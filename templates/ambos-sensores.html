@@ -21,53 +21,93 @@
 	<section class="container">
 		<div class="box3">
 			<h2>Demostrador del procesamiento de ambos sensores simultáneamente. (Interacción táctil + Aceleración)</h2>
-		</div>
-		<div class="box2">
-			<p align="center"><a href=/><button>Volver</button></a></p>
-		</div>
+			Opciones:
+			<ol>
+				<li>Generar una secuencia a partir de ruido aleatorio gaussiano y obtener un score empleando el generador y discriminador entrenados con la GAN.</li>
+			</ol>
+			<ul class="no-bullets">
+				<li>Opción 1:</li>
+				<ul class="no-bullets">
+					<li><button onclick="showbox('ganbox')">Generar secuencias a partir de ruido aleatorio</button></li>
+				</ul>
+			</ul>
 
+		</div>
+		
+		<div id="output"></div>
+
+		<div id="ganbox" style="display:none">Cargando red neuronal...<img src="/static/loader.gif" alt="Cargando..."></div>
+		<div class="box5">
+			<span class="red">Esta red neuronal se considera EXPERIMENTAL. No se ha conseguido generar muestras suficientemente parecidas a las reales de forma conjunta.</span></br>
+
+			Información de clasificación humano/bot:
+			<ul>
+				<li>Generador empleado:</li>
+				<button id="btnmodel2">Ver modelo</button>
+				<div id="modalbtn2" class="modal" style="display:none">
+				  <div class="modal-content">
+				    <button id="close2" class="close">&times;</button>
+				    <p><img src="/static/2p2s_generator_model.png"></p>
+				  </div>
+				</div>			
+				<li>Discriminador empleado:</li>
+					<button id="btnmodel">Ver modelo</button>
+					<div id="modalbtn" class="modal" style="display:none">
+					  <div class="modal-content">
+					    <button id="closeB" class="close">&times;</button>
+					    <p><img src="/static/2p2s_discriminator_model.png"></p>
+					  </div>
+					</div>
+				<li>Interpretación del score:</li>
+				<ul>
+					<li>Humano: Si score cercano a 0</li>
+					<li>Bot: Si score cercano a 1</li>
+				</ul>
+			</ul>
+		</div>
+		<div class="box2"><p align="center"><a href=/><button>Volver</button></a></p></div>
+		  <script>
+
+			// Codigo para ver modelo NN
+			function showmodal(model_btn,btn_id,close_id){
+				var modal = document.getElementById(model_btn);
+				var btn = document.getElementById(btn_id);
+				var span = document.getElementById(close_id);
+				btn.onclick = function() {modal.style.display = "block";}
+				span.onclick = function() {modal.style.display = "none";}
+			}
+
+			showmodal("modalbtn","btnmodel","closeB");
+			showmodal("modalbtn2","btnmodel2","close2");
+
+
+			function showbox(box){
+				document.getElementById("output").innerHTML = "";
+				//Mostrar caja correspondiente
+			    var x = document.getElementById(box);
+			    if (x.style.display === "none"){x.style.display = "block";}
+
+			    if (box=='ganbox'){
+			    	//Enviarlo peticion a FLASK para generar ambas secuencias
+	            	var seq = 'generateSwipeAndLacc';
+		            $.ajax({
+		                type: 'POST',
+		                url: "/rcv_2path2sensorGANrequest",
+		                contentType: 'application/json;charset=UTF-8',  
+		                data: JSON.stringify(seq),
+		                success: function (data) {
+		                    //Añadir el codigo HTML recibido de FLASK a la web a traves del objeto HTML 'output'
+		                    $('#output').html(data);
+		                }
+		            });
+	            console.log("Secuencia de GAN recibida")
+			    }
+			}
+		  </script>
+
+		</div>
 
 	</section>
-
-	<script> 
-
-		loadFirebase();
-		getDeviceInfo();
-
-		//Keyboard
-		window.addEventListener('keydown', keyDown,false);
-		window.addEventListener('keyup', keyUp,false);
-		//Mouse
-		window.addEventListener("mousemove", mouseMove);
-		window.addEventListener("mousedown", mouseDown); 
-		window.addEventListener("mouseleave", mouseLeave);
-		//Touchscreen
-		window.addEventListener("touchstart", touchStart, false);
-		window.addEventListener("touchmove", touchMove, false);
-		window.addEventListener("touchend", touchEnd, false);
-		window.addEventListener("touchcancel", touchCancel, false);
-        //Accelerometer
-        askPermissionAndRun('accelerometer',accelerometer());
-        //Magnetometer
-        askPermissionAndRun('magnetometer',magnetometer());
-        //Gyroscope
-        askPermissionAndRun('gyroscope',gyroscope());
-        //Device Orientation
-        window.addEventListener("deviceorientation", handleOrientation, true);
-
-        //Parar la captura de los sensores tras 5 minutos
-        //setTimeout(stopSensors,300000);
-
-		// }
-
-//Cerrar web tras 5 minutos
-/*setTimeout(
-	function(){
-		window.location.href = './t.txt';
-	}, 300000 );*/
-
-
-</script>
 
 </body>
 </html>

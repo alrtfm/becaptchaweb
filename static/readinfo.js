@@ -34,7 +34,6 @@ function pushToFirebase(userid,child,data){
 
 function getUserID(){
 	//Asigna un ID a la conexion a la web
-	//En este caso es solo timestamp pero CAMBIARLO por MAC!
 	var timestamp = new Date().getTime();
 	return 'connection_'+timestamp;
 }
@@ -173,25 +172,25 @@ function mouseLeave(event){
 function touchStart(event) {  
     // Registrar toques y mostrar coordenadas iniciales y numero de toques simultaneos
 	window.totalTouches = window.totalTouches +1;
-    //console.log('********************************');
-    //console.log('NUEVO TOQUE');
-    //console.log('Numero de toque (absoluto) : ' + window.totalTouches);
-    //console.log('Numero de toques simultaneos : ' + event.touches.length);
+    console.log('********************************');
+    console.log('NUEVO TOQUE');
+    console.log('Numero de toque (absoluto) : ' + window.totalTouches);
+    console.log('Numero de toques simultaneos : ' + event.touches.length);
     var mstime = new Date().getTime(); 
     initialtime = mstime;
     for (var i = 0; i < event.touches.length; i++) {
         ongoingTouches.push(copyTouch(event.touches[i])); //Registrar toque     
         var x = event.touches[i].pageX;
         var y = event.touches[i].pageY;
-        //console.log('(X,Y) = (' + x +','+ y +')');
-        //console.log('Posición del toque ' + i + ' en t = ' + mstime + 'ms =' );
+        console.log('(X,Y) = (' + x +','+ y +')');
+        console.log('Posición del toque ' + i + ' en t = ' + mstime + 'ms =' );
         pushToFirebase(userid,'Touchscreen',{"event": "touchStart", "timestamp": mstime,"touchID_abs":window.totalTouches,"touchID_rel":i, "X": x,"Y": y,});
     }
 }
 function touchMove(event) {
     //Registrar los puntos por los que se desplaza cada toque en la pantalla
     //Loguear los movimientos del toque
-    //console.log('********************************');
+    console.log('********************************');
     for (var i = 0; i < event.touches.length; i++) {
     	var mstime = new Date().getTime(); 
         //Identifica el primer toque que inicia el movimiento
@@ -199,16 +198,16 @@ function touchMove(event) {
         if (idx >= 0) {
         	var x = event.touches[i].pageX;
         	var y = event.touches[i].pageY;
-        	//console.log('(X,Y) = (' + x +','+ y +')')
-        	//console.log('Desplazamiento del toque ' + i + ' en t = ' + mstime +' ms a: ');
+        	console.log('(X,Y) = (' + x +','+ y +')')
+        	console.log('Desplazamiento del toque ' + i + ' en t = ' + mstime +' ms a: ');
         	pushToFirebase(userid,'Touchscreen',{"event": "touchMove", "timestamp": mstime,"touchID_abs":window.totalTouches,"touchID_rel":i,"X": x,"Y": y,});
         }
     }
 }
 function touchEnd(event) {  
     //Gestionar el fin de un toque
-    //console.log('********************************');
-    //console.log('FIN DEL TOQUE');
+    console.log('********************************');
+    console.log('FIN DEL TOQUE');
     var mstime = new Date().getTime();
     touchtime = mstime - initialtime;
     var touches = event.changedTouches;
@@ -217,9 +216,9 @@ function touchEnd(event) {
     	if (idx >= 0) {
     		var x = touches[i].pageX;
     		var y = touches[i].pageY;
-    		//console.log('(X,Y) = (' + x +','+ y +')');
-    		//console.log('Posición del último toque ' + i + ' en t = ' + mstime + 'ms = ');
-    		//console.log('Duración del toque ' + i + ' = ' + touchtime + 'ms');
+    		console.log('(X,Y) = (' + x +','+ y +')');
+    		console.log('Posición del último toque ' + i + ' en t = ' + mstime + 'ms = ');
+    		console.log('Duración del toque ' + i + ' = ' + touchtime + 'ms');
     		pushToFirebase(userid,'Touchscreen',{"event": "touchEnd", "timestamp": mstime,"touchID_abs":window.totalTouches,"touchID_rel":idx,"X": x,"Y": y,});
             ongoingTouches.splice(idx, 1);  // Eliminar toque
         }
@@ -232,7 +231,7 @@ function touchCancel(event) {
     	var mstime = new Date().getTime(); 
     	var idx = ongoingTouchIndexById(event.touches[i].identifier);
         ongoingTouches.splice(idx, 1);  // Eliminar toque
-        //console.log('Toque ' + i + ' cancelado en t = ' + mstime +'ms');
+        console.log('Toque ' + i + ' cancelado en t = ' + mstime +'ms');
     }
 }
 // Identifican el toque actual para poder seguirlo
@@ -347,7 +346,10 @@ function handleOrientation(event) {
     pushToFirebase(userid,'Device_Orientation',{"timestamp": mstime, "Absolute": event.absolute, "alpha": event.alpha, "beta": event.beta, "gamma": event.gamma,});
 }
 
-//DETECCION DE INTERACION TACTIL -------------------------------------------------------------
+//-------------------------------------------------------------------------------------------
+//------------ DETECCION DE INTERACION TACTIL Y ACELEROMETRO PARA EL DEMOSTRADOR ------------
+//-------------------------------------------------------------------------------------------
+
 
 var xDown = null;                                                        
 var yDown = null;
@@ -358,8 +360,9 @@ var tsreads = []
 window.laccduringswipe_x = []
 window.laccduringswipe_y = []
 window.laccduringswipe_z = []
-window.accelerometer_supported = -1
-                                         
+window.accelerometer_supported = sessionStorage.getItem("accelerometer_supported");
+
+
 function detectSwipeRight(event) {
     if ( ! xDown || ! yDown ) {
         return;
@@ -432,9 +435,12 @@ function handleTouchMove(event) {
 			if (x<rect.left || x>rect.right || y>rect.botom || y<rect.top){
 				if(window.RightSwipeDone==1){
 
-                    //Se para captura de acelerometro
+                    //Se para captura de acelerometro y se guardan los datos
                     if (window.accelerometer_supported == 1){
                         window.linear_accelerometer.stop();
+                        sessionStorage.setItem("laccduringswipe_x", JSON.stringify(window.laccduringswipe_x));
+                        sessionStorage.setItem("laccduringswipe_y", JSON.stringify(window.laccduringswipe_y));
+                        sessionStorage.setItem("laccduringswipe_z", JSON.stringify(window.laccduringswipe_z));
                     }
 
 
@@ -484,9 +490,12 @@ function handleTouchEnd(event) {
         yreads.push(y)
         tsreads.push(mstime)
         console.log("swipe end")
-        //Se para captura de acelerometro
+        //Se para captura de acelerometro y se guardan los datos
         if (window.accelerometer_supported == 1){
             window.linear_accelerometer.stop();
+            sessionStorage.setItem("laccduringswipe_x", JSON.stringify(window.laccduringswipe_x));
+            sessionStorage.setItem("laccduringswipe_y", JSON.stringify(window.laccduringswipe_y));
+            sessionStorage.setItem("laccduringswipe_z", JSON.stringify(window.laccduringswipe_z));
             }
 
         // Si hubo swipe right, subir a firebase
@@ -512,7 +521,6 @@ function handleTouchEnd(event) {
                 }
             });
             console.log("Movimiento registrado")
-
         }
         // Eliminar toque y resetear arrays
         ongoingTouches.splice(idx, 1);
@@ -547,14 +555,13 @@ function accelerometer_during_swipe(){
             window.laccduringswipe_x.push(laSensor.x)
             window.laccduringswipe_y.push(laSensor.y)
             window.laccduringswipe_z.push(laSensor.z)
-            console.log('lectura vector x del lacc: '+ window.laccduringswipe_x)
             pushToFirebase(userid,'Accelerometer',{"type": "Linear", "timestamp": mstime, "X": laSensor.x, "Y": laSensor.y, "Z": laSensor.z,});
         });
         window.linear_accelerometer = laSensor;
         window.linear_accelerometer.start();
-        window.accelerometer_supported = 1
+        sessionStorage.setItem("accelerometer_supported", JSON.stringify(1));
     }else {
-        window.accelerometer_supported = 0
+        sessionStorage.setItem("accelerometer_supported", JSON.stringify(0));
         alert('No puede leerse el sensor de aceleración');
     }
 }
