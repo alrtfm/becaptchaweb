@@ -282,22 +282,21 @@ def receive_swipe_GAN_request():
         score2 = predict_on_model(discriminator_swipe,sequence)
         score3 = predict_on_model(classifier_swipe2,sequence)
 
-        img_score1 = botorhuman_img(score1,0.5)
+        #img_score1 = botorhuman_img(score1,0.5)
         img_score2 = botorhuman_img(score2,0.3)
         img_score3 = botorhuman_img(score3,0.55)
         
-        return (render_template("image.html", image=pngImageB64String)
+        return ('</br><h2>Secuencia generada</h2>'
+                    + render_template("image.html", image=pngImageB64String)
                     + '<script> var x = document.getElementById("ganbox"); x.style.display = "none"; </script>'
                     + '<script> var x = document.getElementById("swipebox"); x.style.display = "none"; </script>'
-                    + '<ul><li>Score obtenido empleando el <strong>clasificador entre ruido y secuencias reales</strong>:</li><ul class="no-bullets"><li>'
-                    + str(score1[0])+img_score1
-                    + '</li></ul><ul><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Es la GAN capaz de generar secuencias muy similares a las humanas?</li></ul>'
-                    +'<li>Score obtenido empleando el <strong>discriminador de la red GAN</strong>:</li><ul class="no-bullets"><li>'
+                    + '</br><h2>Detectores de bots</h2>'
+                    +'<ul><li>Score obtenido empleando el <strong>discriminador de la red GAN</strong>:</li><ul class="no-bullets"><li>'
                     + str(score2[0])+img_score2
-                    + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Bot.</li><li style="color:blue;">Interpretación: ¿Es el discriminador de la GAN capaz de distinguir entre bot y humano?</li></ul>'
+                    + '</li></ul><ul><li style="color:blue;">Resultado deseable: Bot.</li><li style="color:blue;">Interpretación: ¿Es el discriminador de la GAN capaz de distinguir entre bot y humano?</li></ul>'
                     +'<li>Score obtenido empleando el <strong>clasificador entre secuencias reales y generadas por la GAN</strong>:</li><ul class="no-bullets"><li>'
                     + str(score3[0])+img_score3
-                    + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Bot.</li><li style="color:blue;">Interpretación: ¿Es el clasificador capaz de distinguir entre bot y humano?</li></ul></ul>'
+                    + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Bot.</li><li style="color:blue;">Interpretación: ¿Es el clasificador capaz de distinguir entre bot y humano?</li></ul></ul>'      
         )
     else:
         return ('',204)
@@ -347,18 +346,17 @@ def receive_swipe():
         score2 = predict_on_model(discriminator_swipe,subswipe)
         score3 = predict_on_model(classifier_swipe2,subswipe)
 
-        img_score1 = botorhuman_img(score1,0.5)
+        #img_score1 = botorhuman_img(score1,0.5)
         img_score2 = botorhuman_img(score2,0.6)
         img_score3 = botorhuman_img(score3,0.55)
         
-        return (render_template("image.html", image=pngImageB64String)
+        return ('</br><h2>Secuencia registrada</h2>'
+                    + render_template("image.html", image=pngImageB64String)
                     + '<script> var x = document.getElementById("ganbox"); x.style.display = "none"; </script>'
-                    + '<ul><li>Score obtenido empleando el <strong>clasificador entre ruido y secuencias reales</strong>:</li><ul class="no-bullets"><li>'
-                    + str(score1[0])+img_score1
-                    + '</li></ul><ul><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Se ha registrado una secuencia realista, o solo ruido?</li></ul>'
-                    +'<li>Score obtenido empleando el <strong>discriminador de la red GAN</strong>:</li><ul class="no-bullets"><li>'
+                    + '</br><h2>Detectores de bots</h2>'
+                    +'<ul><li>Score obtenido empleando el <strong>discriminador de la red GAN</strong>:</li><ul class="no-bullets"><li>'
                     + str(score2[0])+img_score2
-                    + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Es el discriminador de la GAN capaz de distinguir entre bot y humano?</li></ul>'
+                    + '</li></ul><ul><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Es el discriminador de la GAN capaz de distinguir entre bot y humano?</li></ul>'
                     +'<li>Score obtenido empleando el <strong>clasificador entre secuencias reales y generadas por la GAN</strong>:</li><ul class="no-bullets"><li>'
                     + str(score3[0])+img_score3
                     + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Es el clasificador capaz de distinguir entre bot y humano?</li></ul></ul>'
@@ -408,25 +406,30 @@ def receive_lacc_GAN_request():
         pngImageB64String = "data:image/png;base64,"
         pngImageB64String += base64.b64encode(pngImage.getvalue()).decode('utf8')
 
-        img_score1 = botorhuman_img(score1,0.5)
+        #img_score1 = botorhuman_img(score1,0.5)
         img_score2 = botorhuman_img(score2,0.6)
         img_score3 = botorhuman_img(score3,0.5)
         
-        return (render_template("image.html", image=pngImageB64String)
-                    + '<script> var x = document.getElementById("ganbox"); x.style.display = "none"; </script>'
-                    + '<script> var x = document.getElementById("laccbox"); x.style.display = "none"; </script>'
-                    + '<ul><li>Score obtenido empleando el <strong>clasificador entre ruido y secuencias reales</strong>:</li><ul class="no-bullets"><li>'
-                    + str(score1[0])+img_score1
-                    + '</li></ul><ul><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Es la GAN capaz de generar secuencias muy similares a las humanas?</li></ul>'
-                    +'<li>Score obtenido empleando el <strong>discriminador de la red GAN</strong>:</li><ul class="no-bullets"><li>'
-                    + str(score2[0])+img_score2
-                    + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Bot.</li><li style="color:blue;">Interpretación: ¿Es el discriminador de la GAN capaz de distinguir entre bot y humano?</li></ul>'
-                    +'<li>Score obtenido empleando el <strong>clasificador entre secuencias reales y generadas por la GAN</strong>:</li><ul class="no-bullets"><li>'
-                    + str(score3[0])+img_score3
-                    + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Bot.</li><li style="color:blue;">Interpretación: ¿Es el clasificador capaz de distinguir entre bot y humano?</li></ul></ul>'
+        return ('</br><h2>Secuencia generada</h2>'
+                + render_template("image.html", image=pngImageB64String)
+                + '<script> var x = document.getElementById("ganbox"); x.style.display = "none"; </script>'
+                + '<script> var x = document.getElementById("laccbox"); x.style.display = "none"; </script>'
+                + '</br><h2>Detectores de bots</h2>'
+                +'<ul><li>Score obtenido empleando el <strong>discriminador de la red GAN</strong>:</li><ul class="no-bullets"><li>'
+                + str(score2[0])+img_score2
+                + '</li></ul><ul><li style="color:blue;">Resultado deseable: Bot.</li><li style="color:blue;">Interpretación: ¿Es el discriminador de la GAN capaz de distinguir entre bot y humano?</li></ul>'
+                +'<li>Score obtenido empleando el <strong>clasificador entre secuencias reales y generadas por la GAN</strong>:</li><ul class="no-bullets"><li>'
+                + str(score3[0])+img_score3
+                + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Bot.</li><li style="color:blue;">Interpretación: ¿Es el clasificador capaz de distinguir entre bot y humano?</li></ul></ul>'
+                + '</br><h2>Evaluación del generador</h2>'
+                + '¿Cómo de parecidas a las reales son las muestras sintéticas? (Ataque simulado)'
+                + '<ul><li>Score obtenido empleando el <strong>clasificador entre ruido y secuencias reales</strong>:</li><ul class="no-bullets"><li>'
+                + str(score1[0]) + '</li><li></li><li> Grado de similitud con las muestras reales: <strong>' + '{:.2f}'.format((1 - score1[0][0])*100)+' %</strong></li>'
+                + '</li></ul><ul><li style="color:blue;">Resultado deseable: Cercano a 100%.</li><li style="color:blue;">Interpretación: ¿Se ha registrado una secuencia realista, o solo ruido?</li></ul>'
         )
     else:
         return ('',204)
+
 
 @app.route("/rcv_lacc", methods=['POST'])
 def receive_lacc():
@@ -481,19 +484,18 @@ def receive_lacc():
                 score2 = predict_on_model(discriminator_lacc,sublacc)
                 score3 = predict_on_model(classifier_lacc2,sublacc)
 
-                img_score1 = botorhuman_img(score1,0.5)
+                #img_score1 = botorhuman_img(score1,0.5)
                 img_score2 = botorhuman_img(score2,0.6)
                 img_score3 = botorhuman_img(score3,0.5)
             
-                return (render_template("image.html", image=pngImageB64String)
+                return ('</br><h2>Secuencia registrada</h2>'
+                            + render_template("image.html", image=pngImageB64String)
                             + '<script> var x = document.getElementById("ganbox"); x.style.display = "none"; </script>'
                             + '<script> var x = document.getElementById("laccbox"); x.style.display = "none"; </script>'
-                            + '<ul><li>Score obtenido empleando el <strong>clasificador entre ruido y secuencias reales</strong>:</li><ul class="no-bullets"><li>'
-                            + str(score1[0])+img_score1
-                            + '</li></ul><ul><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Se ha registrado una secuencia realista, o solo ruido?</li></ul>'
-                            +'<li>Score obtenido empleando el <strong>discriminador de la red GAN</strong>:</li><ul class="no-bullets"><li>'
+                            + '</br><h2>Detectores de bots</h2>'
+                            +'<ul><li>Score obtenido empleando el <strong>discriminador de la red GAN</strong>:</li><ul class="no-bullets"><li>'
                             + str(score2[0])+img_score2
-                            + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Es el discriminador de la GAN capaz de distinguir entre bot y humano?</li></ul>'
+                            + '</li></ul><ul><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Es el discriminador de la GAN capaz de distinguir entre bot y humano?</li></ul>'
                             +'<li>Score obtenido empleando el <strong>clasificador entre secuencias reales y generadas por la GAN</strong>:</li><ul class="no-bullets"><li>'
                             + str(score3[0])+img_score3
                             + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Humano.</li><li style="color:blue;">Interpretación: ¿Es el clasificador capaz de distinguir entre bot y humano?</li></ul></ul>'
@@ -568,12 +570,15 @@ def receive_2path2sensor_GAN_request():
         
         img_score = botorhuman_img(score,0.5)
 
-        return (render_template("image.html", image=pngImageB64String_swipe)
-            + render_template("image.html", image=pngImageB64String_lacc)
-            + '<script> var x = document.getElementById("ganbox"); x.style.display = "none"; </script>'
-            + '<ul><li>Score obtenido empleando el discriminador de la red GAN:</li><ul class="no-bullets"><li>'
-            + str(score[0])+img_score
-            + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Bot.</li><li style="color:blue;">Interpretación: ¿Es el discriminador de la GAN capaz de distinguir entre bot y humano?</li></ul></ul>'
+        return ('</br><h2>Secuencia de interacción táctil generada</h2>'
+                + render_template("image.html", image=pngImageB64String_swipe)
+                +'</br><h2>Secuencia de aceleración generada</h2>'
+                + render_template("image.html", image=pngImageB64String_lacc)
+                + '<script> var x = document.getElementById("ganbox"); x.style.display = "none"; </script>'
+                + '</br><h2>Detector de bots</h2>'
+                + '<ul><li>Score obtenido empleando el discriminador de la red GAN:</li><ul class="no-bullets"><li>'
+                + str(score[0])+img_score
+                + '</li></ul><ul></li><li style="color:blue;">Resultado deseable: Bot.</li><li style="color:blue;">Interpretación: ¿Es el discriminador de la GAN capaz de distinguir entre bot y humano?</li></ul></ul>'
         )
     else:
         return ('',204)
